@@ -1,0 +1,61 @@
+name: DEV Common Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: Environment
+        required: true
+        default: 'dev'
+
+env:
+  CLUSTER_NAME: aks-lab1-az-asse-dev-001
+  CLUSTER_RESOURCE_GROUP: rg-lab-github-dev-001
+  NAMESPACE_PREFIX: example
+  PROJECT_NAME: example
+
+jobs:
+  deploy-common:
+    name: Deploy Common
+    runs-on: ubuntu-latest
+    # runs-on: [self-hosted, entitlement-dev]
+    environment: ${{ github.event.inputs.env }}
+    steps:
+      - name: Checkout pipelines
+        uses: actions/checkout@v2
+
+      - name: List working directory
+        run: ls
+
+      - name: Login via Azure CLI
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_RBAC_CREDENTIALS }}
+          allow-no-subscriptions: true
+
+      - name: Set Kubernetes Context
+        uses: azure/aks-set-context@v1
+        with:
+          creds: '${{ secrets.AZURE_RBAC_CREDENTIALS }}'
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
+
+      # - name: 'Build Template and Deploy'
+      #   run: |
+      #     export KUBERNETES_NAMESPACE=entitlement-${{ github.event.inputs.env }}
+      #     helm template ./helm/aistemplate --values helm/aistemplate/${{ env.PROJECT_NAME }}/_common-values.yaml --set projectName=${{ env.PROJECT_NAME }} --set istio.enabled=true --set deploymentEnvironment=${{ github.event.inputs.env }} --output-dir helm/output
+      #     kubectl apply -f helm/output/aistemplate/templates/namespace.yaml
+      #     kubectl apply -f helm/output/aistemplate/templates/virtual-service.yaml -n ${KUBERNETES_NAMESPACE}
+      #     kubectl apply -f helm/output/aistemplate/templates/gateway.yaml -n default
+      #     if [ -e ./helm/output/aistemplate/templates/externalservices.yaml ]
+      #     then
+      #         kubectl apply -f helm/output/aistemplate/templates/externalservices.yaml -n ${KUBERNETES_NAMESPACE}
+      #     else
+      #         echo "no external services"
+      #     fi
+      #     if [ -e ./helm/output/aistemplate/templates/policy.yaml ]
+      #     then
+      #         kubectl apply -f helm/output/aistemplate/templates/policy.yaml -n ${KUBERNETES_NAMESPACE}
+      #     else
+      #         echo "no policy"
+      #     fi
