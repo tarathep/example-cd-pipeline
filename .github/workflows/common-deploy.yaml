@@ -13,6 +13,7 @@ env:
   CLUSTER_RESOURCE_GROUP: rg-lab-github-dev-001
   NAMESPACE_PREFIX: example
   PROJECT_NAME: example
+  CONTAINER_REGISTRY_URL: acrlab1azassedev001.azurecr.io
 
 jobs:
   deploy-common:
@@ -45,8 +46,8 @@ jobs:
         with:
           namespace: ${{ env.NAMESPACE }}
           container-registry-url: ${{ env.CONTAINER_REGISTRY_URL }}
-          container-registry-username: ${{ secrets.REGISTRY_USERNAME }}
-          container-registry-password: ${{ secrets.REGISTRY_PASSWORD }}
+          container-registry-username: ${{ secrets.ACR_USERNAME }}
+          container-registry-password: ${{ secrets.ACR_PASSWORD }}
           secret-name: secret-acr
         id: create-secret
 
