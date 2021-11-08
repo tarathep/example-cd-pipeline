@@ -1,0 +1,221 @@
+{{- $envConfig := get .Values.environment .Values.deploymentEnvironment }}
+{{- $appName := include "aistemplate.fullname" . }}
+{{- $projectName := include "aistemplate.namespace" . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aistemplate.cotainerName" . }}
+  labels:
+    {{- include "aistemplate.labels" . | nindent 4 }}
+spec:
+  replicas: {{- include "aistemplate.replicas" . | indent 1}}
+  revisionHistoryLimit: {{ $envConfig.revisionHistoryLimit | default 5 }}
+  selector:
+    matchLabels:
+      {{- include "aistemplate.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "aistemplate.selectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      {{- with $envConfig.hostAliases }}
+      hostAliases:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $envConfig.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      automountServiceAccountToken: false
+      containers:
+        - name: {{ include "aistemplate.cotainerName" . }}
+          image: "{{- include "aistemplate.imageRepositry" . }}:{{ .Values.imageVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: BUILD_NUMBER
+              value: "{{ .Values.buildNumber }}"
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.hostIP
+            {{- with .Values.applicationEnvironemt }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          securityContext:
+            {{- with .Values.securityContext }}
+                {{- toYaml . | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+            - name: application-config
+              mountPath: "/usr/local/tomcat/webapps/app/WEB-INF/classes/config.properties"
+              subPath: config.properties
+              readOnly: true
+            - name: onelogin-config
+              mountPath: "/usr/local/tomcat/webapps/app/WEB-INF/classes/onelogin.saml.properties"
+              subPath: onelogin.saml.properties
+              readOnly: true
+{{- if eq $appName "careportal-be" }}
+            - name: hibernate-config
+              mountPath: "/usr/local/tomcat/webapps/app/WEB-INF/classes/hibernate.cfg.xml"
+              subPath: hibernate.cfg.xml
+              readOnly: true
+{{- end }}
+{{- range $mount := $envConfig.hostMounts }}
+            - name: {{ $mount.name }}
+              mountPath: "{{ $mount.target }}"
+              readOnly: {{ $mount.readOnly }}
+{{- end }}
+{{- range $mount := $envConfig.emptyMounts }}
+            - name: {{ $mount.name }}
+              mountPath: "{{ $mount.target }}"
+{{- end }}
+{{- range $mount := $envConfig.nfsMounts }}
+            - name: {{ $mount.name }}
+              mountPath: "{{ $mount.target }}"
+{{- end }}
+{{- range $mount := $envConfig.azureFileStorages }}
+            - name: {{ $mount.name }}
+              mountPath: "{{ $mount.target }}"
+{{- end }}
+{{- if .Values.probeUrl.enabled }}
+          livenessProbe:
+          {{- if .Values.probeUrl.livenessProbe }}
+            {{- toYaml .Values.probeUrl.livenessProbe | nindent 12 }}
+          {{ else }}
+            httpGet:
+              path: /actuator/info
+              port: 8081
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 10
+          {{- end }}
+          readinessProbe:
+          {{- if .Values.probeUrl.readinessProbe }}
+            {{- toYaml .Values.probeUrl.readinessProbe | nindent 12 }}
+          {{ else }}
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 90
+            periodSeconds: 30
+          {{- end }}  
+{{- end }}
+          ports:
+          - containerPort: {{ .Values.service.targetport }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: application-config
+          secret:
+            secretName: {{$appName}}-config-{{.Values.deploymentEnvironment}}
+            items:
+              - key: {{$appName}}-config-{{.Values.deploymentEnvironment}}.properties
+                path: config.properties
+        - name: onelogin-config
+          secret:
+            secretName: {{ $appName }}-onelogin-{{ .Values.deploymentEnvironment }}
+            items:
+              - key: {{ $appName }}-onelogin-{{ .Values.deploymentEnvironment }}.properties
+                path: onelogin.saml.properties
+{{- if eq $appName "careportal-be" }}
+        - name: hibernate-config
+          secret:
+            secretName: {{ $appName }}-hibernate-{{ .Values.deploymentEnvironment }}
+            items:
+              - key: {{ $appName }}-hibernate-{{ .Values.deploymentEnvironment }}.xml
+                path: hibernate.cfg.xml
+{{- end }}
+{{- if .Values.java.security.downgrade }}             
+        - name: java-security
+          secret:
+            secretName: java-security
+            items:
+              - key: java.security
+                path: java.security
+{{- end }}
+{{- range $mount := $envConfig.hostMounts }}
+        - name: {{ $mount.name }}       
+          hostPath:
+            path: {{ $mount.source }}
+{{- end }}
+{{- range $mount := $envConfig.emptyMounts }}
+        - name: {{ $mount.name }}       
+          emptyDir: {}
+{{- end }}   
+{{- range $mount := $envConfig.nfsMounts }}
+        - name: {{ $mount.name }}       
+          persistentVolumeClaim:
+            claimName: {{ $projectName }}-{{ $appName }}-{{ $mount.name }}-pvc
+{{- end }}
+{{- range $mount := $envConfig.azureFileStorages }}
+        - name: {{ $mount.name }}       
+          persistentVolumeClaim:
+            claimName: {{ $projectName }}-{{ $appName }}-{{ $mount.name }}-pvc
+{{- end }}
+{{- range $mount := $envConfig.nfsMounts }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ $projectName }}-{{ $appName }}-{{ $mount.name }}-pv
+spec:
+  storageClassName: {{ $projectName }}-{{ $appName }}-{{ $mount.name }}-storage
+  capacity:
+    storage: {{ $mount.storage | quote }}
+  volumeMode: Filesystem
+  accessModes:
+    - {{ $mount.accessModes | quote }}
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: {{ $mount.source | quote }}
+    server: {{ $mount.server }}
+    readOnly: {{ $mount.readOnly }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $projectName }}-{{ $appName }}-{{ $mount.name }}-pvc
+spec:
+  storageClassName: {{ $projectName }}-{{ $appName }}-{{ $mount.name }}-storage
+  accessModes:
+    - {{ $mount.accessModes | quote }}
+  resources:
+    requests:
+      storage: {{ $mount.storage | quote }}
+{{- end }}
+
+{{- range $mount := $envConfig.azureFileStorages }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ $projectName }}-{{ $appName }}-{{ $mount.name }}-pv
+spec:
+  storageClassName: {{ $mount.storageClassName }}
+  capacity:
+    storage: {{ $mount.storage | quote }}
+  accessModes:
+    - {{ $mount.accessModes | quote }}
+  persistentVolumeReclaimPolicy: Retain
+  azureFile:
+    secretName: {{ $mount.secretName }}
+    shareName: {{ $mount.server }}
+    readOnly: {{ $mount.readOnly }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $projectName }}-{{ $appName }}-{{ $mount.name }}-pvc
+spec:
+  storageClassName: {{ $mount.storageClassName }}
+  accessModes:
+    - {{ $mount.accessModes | quote }}
+  resources:
+    requests:
+      storage: {{ $mount.storage | quote }}
+{{- end }}

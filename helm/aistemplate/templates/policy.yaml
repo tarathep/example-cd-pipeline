@@ -1,0 +1,56 @@
+{{- if .Values.jwtToken }}
+{{- $jwtConfig := get .Values.jwtToken .Values.deploymentEnvironment }}
+{{ if $jwtConfig }}
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: default
+spec:
+  jwtRules:
+{{- range $payload := $jwtConfig.payloads }}
+  - audiences:
+    - {{ $payload.audience }}
+    issuer: {{ $payload.issuer | quote }}
+    jwksUri: {{ $payload.jwksUri | quote }}
+    forwardOriginalToken: true
+{{- end }}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: default
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        requestPrincipals:
+{{- range $payload := $jwtConfig.payloads }}
+         - "{{ $payload.issuer }}*"
+{{- end }}
+{{- if $jwtConfig.whitelist }}
+  - from:
+    - source:
+        namespaces: 
+{{- range $whitelist := $jwtConfig.whitelist }}
+          - "{{ $whitelist }}"
+{{- end }}
+{{- end }}
+  - to:
+    - operation:
+        ports: ["8081"]
+  - to:
+    - operation:
+        paths:
+          - "/healthz/*"
+{{- range $contextPath := $jwtConfig.contextPath }}
+          - "{{ $contextPath }}/swagger-ui*"
+          - "{{ $contextPath }}/webjars*"
+          - "{{ $contextPath }}/swagger-resources*"
+          - "{{ $contextPath }}/v2/api-docs*"
+{{- end }}
+{{- range $excludePath := $jwtConfig.excludePath }}
+          - "{{ $excludePath }}*"
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,19 @@
+projectDomainName: entitlement
+
+virutalService:
+  - prefix:
+      - "/books/"
+    rewrite: "/"
+    port: 3000
+    host: apple-apns
+
+externalServices:
+  dev:
+    - name: apim
+      host: devoncloudapim.azure-api.net
+      port: 443
+      protocol: https
+      mockAvailable: false
+      retryOn: false
+      perTryTimeout: "30s"
+      timeout: "30s"

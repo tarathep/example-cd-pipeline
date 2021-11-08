@@ -1,0 +1,23 @@
+{{- if .Values.istio.enabled -}}
+{{- $envConfig := get .Values.environment .Values.deploymentEnvironment }}
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: {{ include "aistemplate.fullname" . }}
+spec:
+  host: {{ include "aistemplate.fullname" . }}
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+  subsets:
+  - name: stable
+    labels:
+      release: "stable"
+  - name: candidate
+    labels:
+    {{- if $envConfig.permanentCandidate }}
+      release: "candidate"
+    {{- else }}
+      release: {{ .Values.release.stage | quote}}
+    {{- end }}
+{{- end }}

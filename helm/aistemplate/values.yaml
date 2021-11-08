@@ -1,0 +1,120 @@
+# Default values for aistemplate.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  pullPolicy: Always
+  logService:
+    repository: /fluent/fluent-bit:1.8.6
+  envVersioning: false
+  repository: /demo/hello-world
+
+nameOverride: ""
+fullnameOverride: ""
+imageVersion: 0.0.1-SNAPSHOT
+buildNumber: 1
+logbackName: logback-spring
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetport: 8080
+
+istio:
+  enabled: false
+  namespace: enabled
+  mesh: true
+
+egress:
+  enabled: false
+
+probeUrl:
+  enabled: false
+
+traefik:
+  enabled: false
+
+svcCluster: false
+
+ingress:
+  enabled: false
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths: []
+  tls: []
+
+redis:
+  enabled: false
+
+mock:
+  enabled: false
+
+masterNode:
+  deployable: false
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+    ephemeral-storage: "5Gi"
+  requests:
+    cpu: 100m
+    memory: 128Mi
+    ephemeral-storage: "200Mi"
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+frontend:
+  enabled: false
+
+securityContext:
+  capabilities:
+    drop:
+      - ALL
+  runAsUser: 2000
+  runAsGroup: 2000
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+
+release:
+  stage: stable
+  candidateEnabled: false
+
+candidateList:
+  dev: dev
+
+java:
+  security:
+    downgrade: false
+
+environment:
+  dev:
+    containerRegistry: acrlab1azassedev001
+    dnsName: "20.212.120.225"
+    elasticHost: 10.144.9.104
+    elasticUser: elastic
+    elasticPassword: 
+    elasticTLS: true
+    elasticIndexPrefix: sub-entitlement-az-dev
+    swagger: true
+    httpEnabled: true
+    tlsEnabled: false
+    revisionHistoryLimit: "0"
+    permanentCandidate: false
+    clusterDomain: cluster.local
+    prefixNamespace: true
+    suffixNamespace: true
+    gatewayName: dev-gateway
+    nodeSelector:
+      agentpool: noodpool
+    kubernetesTCPAddr: aks-lab1-az-asse-dev-001-dns-60fd2ffd.hcp.southeastasia.azmk8s.io
+    kubernetesPort: tcp://aks-lab1-az-asse-dev-001-dns-60fd2ffd.hcp.southeastasia.azmk8s.io:80
+    kubernetesTCP: tcp://aks-lab1-az-asse-dev-001-dns-60fd2ffd.hcp.southeastasia.azmk8s.io:80
+    kubernetesServiceHost: aks-lab1-az-asse-dev-001-dns-60fd2ffd.hcp.southeastasia.azmk8s.io.io

@@ -1,0 +1,53 @@
+{{- if .Values.authorizationPolicies }}
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: deny-all
+spec:
+  {}
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: exclude-auth-policy-default
+spec:
+  rules:
+  - to:
+    - operation:
+        paths: ["/ais/rest/*/swagger-ui.html","/ais/rest/*/webjars*","/ais/rest/*/swagger-resources*","/ais/rest/*/v2/api-docs*","/actuator*"]
+---
+{{- if .Values.authorizationPolicies.excludePaths }}
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: exclude-auth-policy-custom
+spec:
+  rules:
+  - to:
+    - operation:
+        paths: {{ .Values.authorizationPolicies.excludePaths }}
+---
+{{- end }}
+{{- if .Values.authorizationPolicies.policy }}
+{{- range $policy := .Values.authorizationPolicies.policy }}
+apiVersion: "security.istio.io/v1beta1"
+kind: "AuthorizationPolicy"
+metadata:
+  name: "auth-policy-claims-{{ $policy.claimsName }}"
+spec:
+  rules:
+  {{- range $rules := $policy.rules }}
+  - to:
+    {{- range $endpoint := $rules.endpoints }}
+     - operation:
+        methods: ["{{ $endpoint.method }}"]
+        paths: ["{{ $endpoint.path }}"]
+    {{- end }}
+    when:
+    - key: request.auth.claims[{{ $policy.claimsName }}]
+      values: ["{{ $rules.value }}"]
+  {{- end }}
+---
+{{- end }}
+{{- end }}
+{{- end }}

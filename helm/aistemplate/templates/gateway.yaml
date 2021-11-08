@@ -1,0 +1,55 @@
+{{- if .Values.istio.enabled -}}
+{{- $envConfig := get .Values.environment .Values.deploymentEnvironment }}
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: {{ $envConfig.gatewayName }}
+spec:
+  selector:
+    istio: ingressgateway # use Istio default gateway implementation
+  servers:
+{{- if $envConfig.httpEnabled }}
+  - port:
+      number: 8080
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*.{{ $envConfig.dnsName}}"
+{{- end }}
+{{- if $envConfig.tlsEnabled }}
+  - port:
+      number: 8443
+      name: https
+      protocol: HTTPS
+    hosts:
+    - "*.{{ $envConfig.dnsName}}"
+    tls:
+      mode: SIMPLE
+      credentialName: istio-ingressgateway-certs
+      minProtocolVersion: TLSV1_2
+      cipherSuites:
+      - ECDHE-RSA-CHACHA20-POLY1305
+      - ECDHE-RSA-AES256-GCM-SHA384
+      - ECDHE-RSA-AES256-SHA
+      - AES256-GCM-SHA384
+      - AES256-SHA
+{{- if .Values.svcCluster }}
+  - port:
+      number: 443
+      name: https-internal
+      protocol: HTTPS
+    hosts:
+    - "*.{{ $envConfig.dnsName}}"
+    tls:
+      mode: SIMPLE
+      credentialName: istio-ingressgateway-certs
+      minProtocolVersion: TLSV1_2
+      cipherSuites:
+      - ECDHE-RSA-CHACHA20-POLY1305
+      - ECDHE-RSA-AES256-GCM-SHA384
+      - ECDHE-RSA-AES256-SHA
+      - AES256-GCM-SHA384
+      - AES256-SHA
+{{- end }}
+{{- end }}
+{{- end }}

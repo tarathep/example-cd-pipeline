@@ -1,0 +1,166 @@
+{{- $envConfig := get .Values.environment .Values.deploymentEnvironment }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubesphere:fluent-bit
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubesphere:fluent-bit
+subjects:
+- kind: ServiceAccount
+  name: fluentbit-es
+  namespace: kubesphere-logging-system
+---
+apiVersion: logging.kubesphere.io/v1alpha2
+kind: Parser
+metadata:
+  name: parser-es
+spec:
+  regex:
+    timeKey: time
+    timeFormat: "%d/%b/%Y:%H:%M:%S %z"
+    regex: ^(?<logtimestamp>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<log>.*)$
+---
+apiVersion: logging.kubesphere.io/v1alpha2
+kind: Filter
+metadata:
+  name: filter-es
+  labels:
+    logging.kubesphere.io/enabled: "true"
+spec:
+  match: kube.*
+  filters:
+  - kubernetes:
+      kubeURL: "https://{{ $envConfig.kubernetesServiceHost }}:443"
+      kubeCAFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+      kubeTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+      labels: false
+      annotations: false
+      mergeLog: true
+  - nest:
+      operation: lift
+      nestedUnder: kubernetes
+      addPrefix: kubernetes_
+  - modify:
+      rules:
+      - remove: stream
+      - remove: kubernetes_pod_id
+      - remove: kubernetes_host
+      - remove: kubernetes_pod_id
+      - remove: kubernetes_container_hash
+  - nest:
+      operation: nest
+      wildcard:
+      - kubernetes_*
+      nestUnder: kubernetes
+      removePrefix: kubernetes_
+---
+apiVersion: logging.kubesphere.io/v1alpha2
+kind: FluentBitConfig
+metadata:
+  name: fluentbitconfig-es
+spec:
+  service:
+    flushSeconds: 1
+    daemon: false
+    logLevel: info
+    parsersFile: parsers.conf
+  inputSelector:
+    matchExpressions:
+    - key: logging.kubesphere.io/enabled
+      operator: In
+      values: ["true"]
+  filterSelector:
+    matchExpressions:
+    - key: logging.kubesphere.io/enabled
+      operator: In
+      values: ["true"]
+  outputSelector:
+    matchExpressions:
+    - key: logging.kubesphere.io/enabled
+      operator: In
+      values: ["true"]
+---
+apiVersion: logging.kubesphere.io/v1alpha2
+kind: FluentBit
+metadata:
+  name: fluentbit-es
+  labels:
+    app: fluent-bit
+    build-number: "{{ .Values.buildNumber }}"
+spec:
+  image: "{{ $envConfig.containerRegistry }}/kubesphere/fluent-bit:v1.8.3"
+  imagePullPolicy: IfNotPresent
+  positionDB:
+    hostPath:
+      path: /var/lib/fluent-bit/
+  resources:
+    requests:
+      cpu: 10m
+      memory: 25Mi
+    limits:
+      cpu: 500m
+      memory: 200Mi
+  fluentBitConfigName: fluentbitconfig-es
+---
+apiVersion: logging.kubesphere.io/v1alpha2
+kind: Input
+metadata:
+  name: input-es
+  labels:
+    logging.kubesphere.io/enabled: "true"
+spec:
+  tail:
+    tag: kube.*
+    path: /var/log/containers/*.log
+    excludePath: > 
+      /var/log/containers/*_tigera-operator_*.log,
+      /var/log/containers/*_kube-system_*.log,
+      /var/log/containers/*_calico-system_*.log,
+      /var/log/containers/*_kubesphere-logging-system_*.log,
+      /var/log/containers/*_gatekeeper-system_*.log
+    parser: parser-es
+    refreshIntervalSeconds: 10
+    memBufLimit: 100MB
+    skipLongLines: true
+---
+apiVersion: v1
+data:
+  elastic_user: "{{ $envConfig.elasticUser }}"
+  elastic_password: "{{ $envConfig.elasticPassword }}"
+kind: Secret
+metadata:
+  name: kubesphere-logging-system-secret
+type: Opaque
+---
+apiVersion: logging.kubesphere.io/v1alpha2
+kind: Output
+metadata:
+  name: output-es
+  labels:
+    logging.kubesphere.io/enabled: "true"
+spec:
+  match: kube.*
+  es:
+    host: "{{ $envConfig.elasticHost }}"
+    port: 9200
+    httpUser:
+      valueFrom:
+        secretKeyRef:
+          name: kubesphere-logging-system-secret
+          key: elastic_user
+    httpPassword:
+      valueFrom:
+        secretKeyRef:
+          name: kubesphere-logging-system-secret
+          key: elastic_password
+    logstashPrefix: "{{ $envConfig.elasticIndexPrefix }}"
+    logstashFormat: true
+    timeKey: "@timestamp"
+    {{- if $envConfig.elasticTLS }}
+    tls:
+      verify: false
+    {{- end }}
+

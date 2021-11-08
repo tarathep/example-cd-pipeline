@@ -1,0 +1,81 @@
+{{- if .Values.istio.enabled -}}
+{{- $targetPort := .Values.service.targetport -}}
+{{- $candidateList := get .Values.candidateList .Values.deploymentEnvironment }}
+{{- $candidateEnabled := .Values.release.candidateEnabled -}}
+{{- $envConfig := get .Values.environment .Values.deploymentEnvironment }}
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: {{ .Values.projectName }}-virtual-service
+spec:
+  hosts:
+  - "{{- include "aistemplate.ingressHostname" . }}"
+{{- if .Values.istio.mesh }}
+  - "*.{{- include "aistemplate.namespace" . }}.svc.{{ $envConfig.clusterDomain }}"
+{{- end }}
+  gateways:
+  - default/{{ $envConfig.gatewayName }}
+{{- if .Values.istio.mesh }}
+  - mesh
+{{- end }}
+{{- if .Values.virutalService }}
+  http:
+{{- range $virutalServices := .Values.virutalService }}
+{{- if and $candidateList $candidateEnabled }}
+  - match:
+{{- range $prefixs := $virutalServices.prefix }}                                                                                  
+    - uri:
+        prefix: "{{ $prefixs }}"
+      headers:
+        X-App-Version:
+          prefix: "{{ $candidateList }}"
+{{- end }}
+{{- if $virutalServices.rewrite }}
+    rewrite:
+      uri: "{{ $virutalServices.rewrite }}"
+{{- end }}
+    route:
+    - destination:
+        port:
+          number: {{ $virutalServices.port }}
+        host: {{ $virutalServices.host }}
+        subset: candidate
+{{- end }}
+  - match:
+{{- range $prefixs := $virutalServices.prefix }}                                                                                  
+    - uri:
+        prefix: "{{ $prefixs }}"
+{{- end }}
+{{- if $virutalServices.rewrite }}
+    rewrite:
+      uri: "{{ $virutalServices.rewrite }}"
+{{- end }}
+    route:
+    - destination:
+        port:
+          number: {{ $virutalServices.port }}
+        host: {{ $virutalServices.host }}
+        subset: stable
+{{- end }}
+{{- end }}
+{{- $swaggerEnable := get .Values.environment .Values.deploymentEnvironment }}
+{{- if $swaggerEnable.swagger }}
+{{- range $swaggers := .Values.swaggerUrl }}
+  - match: 
+{{- range $prefixs := $swaggers.prefix }}                                                                                  
+    - uri:
+        prefix: "{{ $prefixs }}"
+{{- end }}
+{{- if $swaggers.rewrite }}
+    rewrite:
+      uri: "{{ $swaggers.rewrite }}"
+{{- end }}
+    route:
+    - destination:
+        port:
+          number: {{ $swaggers.port }}
+        host: {{ $swaggers.host }}
+        subset: stable
+{{- end }}
+{{- end }}
+{{- end }}

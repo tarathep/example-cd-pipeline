@@ -1,0 +1,70 @@
+{{- if .Values.frontend.enabled -}}
+{{- $envConfig := get .Values.environment .Values.deploymentEnvironment }}
+{{- $appName := include "aistemplate.fullname" . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aistemplate.cotainerName" . }}
+  labels:
+    {{- include "aistemplate.labels" . | nindent 4 }}
+spec:
+  replicas: {{- include "aistemplate.replicas" . | indent 1}}
+  revisionHistoryLimit: {{ $envConfig.revisionHistoryLimit | default 5 }}
+  selector:
+    matchLabels:
+      {{- include "aistemplate.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "aistemplate.selectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      {{- with $envConfig.hostAliases }}
+      hostAliases:
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      automountServiceAccountToken: false
+      containers:
+        - name: {{ include "aistemplate.cotainerName" . }}
+          image: "{{- include "aistemplate.imageRepositry" . }}:{{ .Values.imageVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: BUILD_NUMBER
+              value: "{{ .Values.buildNumber }}"
+            - name: PORT
+              value: "{{ .Values.service.targetport }}"
+          volumeMounts:
+          #   - name: tz-config
+          #     mountPath: "/etc/localtime"
+          #     readOnly: true
+            - name: frontend-config
+              mountPath: "/workspace/assets/data"
+              readOnly: true
+            # - name: nginx-config
+            #   mountPath: "/etc/nginx/conf.d/default.conf"
+            #   subPath: default.conf
+            #   readOnly: true
+          ports:
+          - containerPort: {{ .Values.service.targetport }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+      #   - name: tz-config
+      #     hostPath:
+      #       path: /usr/share/zoneinfo/Asia/Bangkok
+        - name: frontend-config
+          secret:
+            secretName: {{ $appName }}-{{ .Values.deploymentEnvironment }}
+            items:
+              - key: {{ $appName }}-{{ .Values.deploymentEnvironment }}.json
+                path: ui-app-config.json
+      #   - name: nginx-config
+      #     secret:
+      #       secretName: nginx-{{ .Values.deploymentEnvironment }}
+      #       items:
+      #         - key: nginx-{{ .Values.deploymentEnvironment }}.yaml
+      #           path: default.conf
+{{- end }}

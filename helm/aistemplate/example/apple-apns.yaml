@@ -1,0 +1,22 @@
+fullnameOverride: node-express-app
+projectName: node-express-app
+image:
+  repository: /node-express-app
+
+istio:
+  enabled: true
+
+environment:
+  dev:
+    replicaCount: 1
+    probeUrl:
+      enabled: false
+
+  sit:
+    replicaCount: 1
+
+  uat:
+    replicaCount: 1
+
+  prd:
+    replicaCount: 3

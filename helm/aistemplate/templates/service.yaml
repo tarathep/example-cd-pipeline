@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aistemplate.fullname" . }}
+{{- if .Values.probeUrl.enabled }}
+  annotations:
+    prometheus.io/path: /actuator/prometheus
+    prometheus.io/port: "8081"
+    prometheus.io/scrape: "true"
+{{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetport }}
+      name: http
+    - port: {{ .Values.service.port2 }}
+      targetPort: {{ .Values.service.targetport2 }}
+      name: http-service
+  selector:
+    {{- include "aistemplate.selectorServiceLabels" . | nindent 4 }}

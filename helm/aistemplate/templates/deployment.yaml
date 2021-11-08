@@ -1,0 +1,183 @@
+{{- $envConfig := get .Values.environment .Values.deploymentEnvironment }}
+{{- $appName := include "aistemplate.fullname" . }}
+{{- $projectName := include "aistemplate.namespace" . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aistemplate.cotainerName" . }}
+  labels:
+    {{- include "aistemplate.labels" . | nindent 4 }}
+spec:
+  replicas: {{- include "aistemplate.replicas" . | indent 1}}
+  revisionHistoryLimit: {{ $envConfig.revisionHistoryLimit | default 5 }}
+  selector:
+    matchLabels:
+      {{- include "aistemplate.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- if or (eq $appName "apple-apns") (eq $appName "diameter") }}
+      annotations:
+        sidecar.istio.io/inject: "false"
+      {{- end }}
+      labels:
+        {{- include "aistemplate.selectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      {{- with $envConfig.hostAliases }}
+      hostAliases:
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+      {{- with $envConfig.nodeSelector }}
+      nodeSelector:
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      automountServiceAccountToken: false
+      containers:
+        - name: {{ include "aistemplate.cotainerName" . }}
+          image: "{{- include "aistemplate.imageRepositry" . }}:{{ .Values.imageVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: BUILD_NUMBER
+              value: "{{ .Values.buildNumber }}"
+            - name: NODE_ENV
+              value: "{{ .Values.deploymentEnvironment }}"
+            - name: PORT
+              value: "{{ .Values.service.targetport }}"
+            - name: HOST_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.hostIP
+          securityContext:
+            {{- with .Values.securityContext }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          volumeMounts:
+            - name: application-config
+              mountPath: "/workspace/config"
+              readOnly: true
+{{- if eq $appName "apple-apns" }}
+            - name: application-certificate
+              mountPath: "/workspace/certificate"
+              readOnly: true
+{{- end }}
+{{- if eq $appName "apple-entitlement"}}
+            - name: apple-entitlement-certificate
+              mountPath: "/workspace/cert/test_es_ais_co_th_acme.crt"
+              subPath: "test_es_ais_co_th_acme.crt"
+              readOnly: true
+            - name: apple-entitlement-key
+              mountPath: "/workspace/cert/test_es_ais_co_th_acme.key"
+              subPath: "test_es_ais_co_th_acme.key"
+              readOnly: true
+{{- end }}
+{{- range $mount := $envConfig.hostMounts }}
+            - name: {{ $mount.name }}
+              mountPath: "{{ $mount.target }}"
+              readOnly: {{ $mount.readOnly }}
+{{- end }}
+{{- range $mount := $envConfig.emptyMounts }}
+            - name: {{ $mount.name }}
+              mountPath: "{{ $mount.target }}"
+{{- end }}
+{{- range $mount := $envConfig.nfsMounts }}
+            - name: {{ $mount.name }}
+              mountPath: "{{ $mount.target }}"
+{{- end }}
+{{- if .Values.probeUrl.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /actuator/info
+              port: 8081
+            initialDelaySeconds: 90
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 90
+            periodSeconds: 20
+{{- end }}
+          ports:
+          - containerPort: {{ .Values.service.targetport }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: application-config
+          secret:
+            secretName: {{ $appName }}-{{ .Values.deploymentEnvironment }}
+            items:
+              - key: {{ $appName }}-{{ .Values.deploymentEnvironment }}.json
+                path: config.json
+{{- if eq $appName "apple-apns" }}
+        - name: application-certificate
+          secret:
+            secretName: {{ $appName }}-private-key-{{ .Values.deploymentEnvironment }}
+            items:
+              - key: {{ $appName }}-private-key.pem
+                path: authen_key.pem
+{{- end }}
+{{- if eq $appName "apple-entitlement"}}
+        - name: apple-entitlement-certificate
+          secret:
+            secretName: {{ $appName }}-acme-crt-{{ .Values.deploymentEnvironment }}
+            items:
+              - key: {{ $appName }}-acme.crt
+                path: test_es_ais_co_th_acme.crt
+        - name: apple-entitlement-key
+          secret:
+            secretName: {{ $appName }}-acme-key-{{ .Values.deploymentEnvironment }}
+            items:
+              - key: {{ $appName }}-acme.key
+                path: test_es_ais_co_th_acme.key
+{{- end }}
+
+{{- range $mount := $envConfig.hostMounts }}
+        - name: {{ $mount.name }}       
+          hostPath:
+            path: {{ $mount.source }}
+{{- end }}
+{{- range $mount := $envConfig.emptyMounts }}
+        - name: {{ $mount.name }}       
+          emptyDir: {}
+{{- end }}   
+{{- range $mount := $envConfig.nfsMounts }}
+        - name: {{ $mount.name }}       
+          persistentVolumeClaim:
+            claimName: {{ $projectName }}-{{ $appName }}-{{ $mount.name }}-pvc
+{{- end }}
+{{- range $mount := $envConfig.nfsMounts }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ $projectName }}-{{ $appName }}-{{ $mount.name }}-pv
+spec:
+  storageClassName: {{ $projectName }}-{{ $appName }}-{{ $mount.name }}-storage
+  capacity:
+    storage: {{ $mount.storage | quote }}
+  volumeMode: Filesystem
+  accessModes:
+    - {{ $mount.accessModes | quote }}
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    path: {{ $mount.source | quote }}
+    server: {{ $mount.server }}
+    readOnly: {{ $mount.readOnly }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $projectName }}-{{ $appName }}-{{ $mount.name }}-pvc
+spec:
+  storageClassName: {{ $projectName }}-{{ $appName }}-{{ $mount.name }}-storage
+  accessModes:
+    - {{ $mount.accessModes | quote }}
+  resources:
+    requests:
+      storage: {{ $mount.storage | quote }}
+{{- end }}

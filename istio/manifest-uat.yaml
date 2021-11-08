@@ -1,0 +1,71 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+spec:
+  hub: "acrentitlementazassedev001.azurecr.io/istio"
+  meshConfig:
+    accessLogFile: "/dev/stdout"
+    accessLogEncoding: "JSON"
+  components:
+    pilot:
+      k8s:
+        replicaCount: 1
+        hpaSpec:
+          minReplicas: 1
+          maxReplicas: 3
+        nodeSelector:
+          agentpool: noodpool
+        resources:
+          requests:
+            cpu: 500m
+            memory: 2Gi
+          limits:
+            cpu: 1000m
+            memory: 2Gi
+        env:
+          - name: KUBERNETES_PORT_443_TCP_ADDR
+            value: entitlement-b4858d1d.hcp.southeastasia.azmk8s.io
+          - name: KUBERNETES_PORT
+            value: tcp://entitlement-b4858d1d.hcp.southeastasia.azmk8s.io:443
+          - name: KUBERNETES_PORT_443_TCP
+            value: tcp://entitlement-b4858d1d.hcp.southeastasia.azmk8s.io:443
+          - name: KUBERNETES_SERVICE_HOST
+            value: entitlement-b4858d1d.hcp.southeastasia.azmk8s.io
+    ingressGateways:
+      - enabled: true
+        name: istio-ingressgateway
+        k8s:
+          replicaCount: 1
+          hpaSpec:
+            minReplicas: 1
+            maxReplicas: 3
+          nodeSelector:
+            agentpool: noodpool
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 2000m
+              memory: 1Gi
+          # service:
+          #    loadBalancerIP: "10.144.9.53"
+          # serviceAnnotations:
+          #   "service.beta.kubernetes.io/azure-load-balancer-internal": "true"
+          #   "service.beta.kubernetes.io/azure-load-balancer-internal-subnet": "snet-EntitlementAksService-az-asse-dev-001"
+    egressGateways:
+      - enabled: true
+        name: istio-egressgateway
+        k8s:
+          replicaCount: 1
+          hpaSpec:
+            minReplicas: 1
+            maxReplicas: 3
+          nodeSelector:
+            agentpool: noodpool
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 2000m
+              memory: 1Gi

@@ -1,0 +1,47 @@
+{{- $envConfig := get .Values.environment .Values.deploymentEnvironment }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: entitlement-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: entitlement-redis
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+      labels:
+        app: entitlement-redis
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: redis
+          image: "{{ $envConfig.containerRegistry }}/redis:6.2.6"
+          ports:
+            - containerPort: 6379
+          securityContext:
+            runAsGroup: 999
+            runAsNonRoot: true
+            runAsUser: 999
+          resources:
+            requests:
+              cpu: 500m
+              memory: 2Gi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+spec:
+  type: ClusterIP
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: 6379
+  selector:
+    app: entitlement-redis
