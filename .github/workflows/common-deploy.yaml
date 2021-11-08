@@ -40,6 +40,16 @@ jobs:
           cluster-name: ${{ env.CLUSTER_NAME }}
           resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
 
+      - name: Create Image ACR Secret If not exist
+        uses: azure/k8s-create-secret@v1
+        with:
+          namespace: ${{ env.NAMESPACE }}
+          container-registry-url: ${{ env.CONTAINER_REGISTRY_URL }}
+          container-registry-username: ${{ secrets.REGISTRY_USERNAME }}
+          container-registry-password: ${{ secrets.REGISTRY_PASSWORD }}
+          secret-name: secret-acr
+        id: create-secret
+
       # - name: 'Build Template and Deploy'
       #   run: |
       #     export KUBERNETES_NAMESPACE=entitlement-${{ github.event.inputs.env }}
