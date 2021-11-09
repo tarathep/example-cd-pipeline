@@ -17,3 +17,4 @@ externalServices:
       retryOn: false
       perTryTimeout: "30s"
       timeout: "30s"
+  sit:
