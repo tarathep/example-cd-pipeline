@@ -18,3 +18,5 @@ externalServices:
       perTryTimeout: "30s"
       timeout: "30s"
   sit:
+  uat:
+  prd:

@@ -1,0 +1,55 @@
+name: UAT - Node Express App Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Repository branch or tag
+        required: true
+        default: "0.0.1-SNAPSHOT"
+
+env:
+  ENVIRONMENT: uat
+  CLUSTER_NAME: aks-lab1-az-asse-dev-001
+  CLUSTER_RESOURCE_GROUP: rg-lab-github-dev-001
+  NAMESPACE_PREFIX: example
+  PROJECT_NAME: example
+  MICROSERVICE_NAME: node-express-app
+
+jobs:
+  deploy-microservice:
+    name: Deploy Microservice
+    runs-on: ubuntu-latest
+    # runs-on: [self-hosted, entitlement-dev]
+    environment: uat
+    steps:
+      - name: Checkout pipelines
+        uses: actions/checkout@v2
+
+      - name: List working directory
+        run: ls
+
+      - name: Login via Azure CLI
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_RBAC_CREDENTIALS }}
+          allow-no-subscriptions: true
+
+      - name: Set Kubernetes Context
+        uses: azure/aks-set-context@v1
+        with:
+          creds: "${{ secrets.AZURE_RBAC_CREDENTIALS }}"
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
+
+      - name: "Build Deployment Template"
+        run: |
+          helm template ./helm/aistemplate --values helm/aistemplate/${{ env.PROJECT_NAME }}/${{ env.MICROSERVICE_NAME }}.yaml --set deploymentEnvironment=${{ env.ENVIRONMENT }} --set imageVersion=${{ github.event.inputs.ref }} --set buildNumber=${{ github.run_number }} --output-dir helm/output
+
+      - name: "Deploy"
+        run: |
+          export KUBERNETES_NAMESPACE=${{ env.NAMESPACE_PREFIX }}-${{ env.ENVIRONMENT }}
+          kubectl apply -f helm/output/aistemplate/templates/deployment.yaml -n ${KUBERNETES_NAMESPACE}
+          kubectl apply -f helm/output/aistemplate/templates/service.yaml -n ${KUBERNETES_NAMESPACE}
+          kubectl apply -f helm/output/aistemplate/templates/destinationrule.yaml -n ${KUBERNETES_NAMESPACE}
+          kubectl rollout status deployment ${{ env.MICROSERVICE_NAME }} -n ${KUBERNETES_NAMESPACE}
