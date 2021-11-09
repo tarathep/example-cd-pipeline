@@ -3,6 +3,12 @@
 
 ## STEP TO DEPLOY (LOGICAL PROCESS)
 
+### 0. Associate AKS to ACR 
+
+```bash
+az aks update -n aks-lab1-az-asse-dev-001 -g rg-lab-github-dev-001 --attach-acr acrlab1azassedev001
+```
+
 ### 1. Istio Deployement
 
 1. install namespace istio

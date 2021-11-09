@@ -116,12 +116,12 @@ environment:
     gatewayName: dev-gateway
     nodeSelector:
       agentpool: agentpool
-    kubernetesTCPAddr: entitlement-b4858d1d.hcp.southeastasia.azmk8s.io
-    kubernetesPort: tcp://entitlement-b4858d1d.hcp.southeastasia.azmk8s.io:443
-    kubernetesTCP: tcp://entitlement-b4858d1d.hcp.southeastasia.azmk8s.io:443
-    kubernetesServiceHost: entitlement-b4858d1d.hcp.southeastasia.azmk8s.io
+    kubernetesTCPAddr: aks-lab1-az-asse-dev-001-dns-70cf0abf.hcp.southeastasia.azmk8s.io
+    kubernetesPort: tcp://aks-lab1-az-asse-dev-001-dns-70cf0abf.hcp.southeastasia.azmk8s.io:443
+    kubernetesTCP: tcp://aks-lab1-az-asse-dev-001-dns-70cf0abf.hcp.southeastasia.azmk8s.io:443
+    kubernetesServiceHost: aks-lab1-az-asse-dev-001-dns-70cf0abf.hcp.southeastasia.azmk8s.io
   sit:
-    containerRegistry: acrentitlementazassedev001.azurecr.io
+    containerRegistry: acrlab1azassedev001.azurecr.io
     dnsName: az.intra.ais
     elasticHost: 10.144.9.104
     elasticUser: elastic

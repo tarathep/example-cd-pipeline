@@ -1,28 +1,27 @@
-name: DEV - Node Express App Deploy
+name: SIT - Node Express App Deploy
 
 on:
   workflow_dispatch:
     inputs:
-      env:
-        description: Environment
+      ref:
+        description: Repository branch or tag
         required: true
-        default: 'dev'
+        default: '0.0.1'
 
 env:
-  ENVIRONMENT: dev
+  ENVIRONMENT: sit
   CLUSTER_NAME: aks-lab1-az-asse-dev-001
   CLUSTER_RESOURCE_GROUP: rg-lab-github-dev-001
   NAMESPACE_PREFIX: example
   PROJECT_NAME: example
   MICROSERVICE_NAME: node-express-app
-  TAG: '0.0.1-SNAPSHOT'
 
 jobs:
   deploy-microservice:
     name: Deploy Microservice
     # runs-on: [self-hosted, entitlement-dev]
     runs-on: ubuntu-latest
-    environment: dev
+    environment: sit
     steps:
       - name: Checkout pipelines
         uses: actions/checkout@v2
@@ -45,7 +44,8 @@ jobs:
 
       - name: 'Build Deployment Template'
         run: |
-          helm template ./helm/aistemplate --values helm/aistemplate/${{ env.PROJECT_NAME }}/${{ env.MICROSERVICE_NAME }}.yaml --set deploymentEnvironment=${{ env.ENVIRONMENT }} --set imageVersion=${{ env.TAG }} --set buildNumber=${{ github.run_number }} --output-dir helm/output
+          helm template ./helm/aistemplate --values helm/aistemplate/${{ env.PROJECT_NAME }}/${{ env.MICROSERVICE_NAME }}.yaml --set deploymentEnvironment=${{ env.ENVIRONMENT }} --set imageVersion=${{ github.event.inputs.ref }} --set buildNumber=${{ github.run_number }} --output-dir helm/output
+
       - name: 'Deploy'
         run: |
           export KUBERNETES_NAMESPACE=${{ env.NAMESPACE_PREFIX }}-${{ env.ENVIRONMENT }}
