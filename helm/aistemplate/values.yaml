@@ -144,7 +144,7 @@ environment:
     kubernetesTCP: tcp://aks-lab1-az-asse-dev-001-dns-70cf0abf.hcp.southeastasia.azmk8s.io:443
     kubernetesServiceHost: aks-lab1-az-asse-dev-001-dns-70cf0abf.hcp.southeastasia.azmk8s.io
   uat:
-    containerRegistry: acrentitlementazassedev001.azurecr.io
+    containerRegistry: acrlab1azassedev001.azurecr.io
     dnsName: az.intra.ais
     elasticHost: 10.144.9.40
     elasticUser: elastic
@@ -161,11 +161,11 @@ environment:
     suffixNamespace: true
     gatewayName: uat-gateway
     nodeSelector:
-      agentpool: noodpool
-    kubernetesTCPAddr: entitlement-b4858d1d.hcp.southeastasia.azmk8s.io
-    kubernetesPort: tcp://entitlement-b4858d1d.hcp.southeastasia.azmk8s.io:443
-    kubernetesTCP: tcp://entitlement-b4858d1d.hcp.southeastasia.azmk8s.io:443
-    kubernetesServiceHost: entitlement-b4858d1d.hcp.southeastasia.azmk8s.io
+      agentpool: agentpool
+    kubernetesTCPAddr: aks-lab1-az-asse-dev-001-dns-70cf0abf.hcp.southeastasia.azmk8s.io
+    kubernetesPort: tcp://aks-lab1-az-asse-dev-001-dns-70cf0abf.hcp.southeastasia.azmk8s.io:443
+    kubernetesTCP: tcp://aks-lab1-az-asse-dev-001-dns-70cf0abf.hcp.southeastasia.azmk8s.io:443
+    kubernetesServiceHost: aks-lab1-az-asse-dev-001-dns-70cf0abf.hcp.southeastasia.azmk8s.io
   prd:
     containerRegistry: acrentitlementazasseprd001.azurecr.io
     dnsName: az.intra.ais
