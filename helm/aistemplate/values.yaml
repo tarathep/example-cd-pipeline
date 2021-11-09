@@ -19,8 +19,10 @@ logbackName: logback-spring
 
 service:
   type: ClusterIP
-  port: 8080
-  targetport: 8080
+  port: 3000
+  targetport: 3000
+  port2: 8081
+  targetport2: 8081
 
 istio:
   enabled: false
@@ -96,8 +98,8 @@ java:
 
 environment:
   dev:
-    containerRegistry: acrlab1azassedev001
-    dnsName: "20.212.120.225"
+    containerRegistry: acrlab1azassedev001.azurecr.io
+    dnsName: az.intra.ais
     elasticHost: 10.144.9.104
     elasticUser: elastic
     elasticPassword: 
@@ -105,7 +107,7 @@ environment:
     elasticIndexPrefix: sub-entitlement-az-dev
     swagger: true
     httpEnabled: true
-    tlsEnabled: false
+    tlsEnabled: true
     revisionHistoryLimit: "0"
     permanentCandidate: false
     clusterDomain: cluster.local
@@ -113,8 +115,77 @@ environment:
     suffixNamespace: true
     gatewayName: dev-gateway
     nodeSelector:
+      agentpool: agentpool
+    kubernetesTCPAddr: entitlement-b4858d1d.hcp.southeastasia.azmk8s.io
+    kubernetesPort: tcp://entitlement-b4858d1d.hcp.southeastasia.azmk8s.io:443
+    kubernetesTCP: tcp://entitlement-b4858d1d.hcp.southeastasia.azmk8s.io:443
+    kubernetesServiceHost: entitlement-b4858d1d.hcp.southeastasia.azmk8s.io
+  sit:
+    containerRegistry: acrentitlementazassedev001.azurecr.io
+    dnsName: az.intra.ais
+    elasticHost: 10.144.9.104
+    elasticUser: elastic
+    elasticPassword: 
+    elasticTLS: true
+    elasticIndexPrefix: sub-entitlement-az-dev
+    swagger: true
+    httpEnabled: true
+    tlsEnabled: true
+    revisionHistoryLimit: "0"
+    permanentCandidate: false
+    clusterDomain: cluster.local
+    prefixNamespace: true
+    suffixNamespace: true
+    gatewayName: sit-gateway
+    nodeSelector:
       agentpool: noodpool
-    kubernetesTCPAddr: aks-lab1-az-asse-dev-001-dns-60fd2ffd.hcp.southeastasia.azmk8s.io
-    kubernetesPort: tcp://aks-lab1-az-asse-dev-001-dns-60fd2ffd.hcp.southeastasia.azmk8s.io:80
-    kubernetesTCP: tcp://aks-lab1-az-asse-dev-001-dns-60fd2ffd.hcp.southeastasia.azmk8s.io:80
-    kubernetesServiceHost: aks-lab1-az-asse-dev-001-dns-60fd2ffd.hcp.southeastasia.azmk8s.io.io
+    kubernetesTCPAddr: entitlement-b4858d1d.hcp.southeastasia.azmk8s.io
+    kubernetesPort: tcp://entitlement-b4858d1d.hcp.southeastasia.azmk8s.io:443
+    kubernetesTCP: tcp://entitlement-b4858d1d.hcp.southeastasia.azmk8s.io:443
+    kubernetesServiceHost: entitlement-b4858d1d.hcp.southeastasia.azmk8s.io
+  uat:
+    containerRegistry: acrentitlementazassedev001.azurecr.io
+    dnsName: az.intra.ais
+    elasticHost: 10.144.9.40
+    elasticUser: elastic
+    elasticPassword: 
+    elasticTLS: true
+    elasticIndexPrefix: sub-entitlement-az-dev
+    swagger: true
+    httpEnabled: true
+    tlsEnabled: true
+    revisionHistoryLimit: "0"
+    permanentCandidate: false
+    clusterDomain: cluster.local
+    prefixNamespace: true
+    suffixNamespace: true
+    gatewayName: uat-gateway
+    nodeSelector:
+      agentpool: noodpool
+    kubernetesTCPAddr: entitlement-b4858d1d.hcp.southeastasia.azmk8s.io
+    kubernetesPort: tcp://entitlement-b4858d1d.hcp.southeastasia.azmk8s.io:443
+    kubernetesTCP: tcp://entitlement-b4858d1d.hcp.southeastasia.azmk8s.io:443
+    kubernetesServiceHost: entitlement-b4858d1d.hcp.southeastasia.azmk8s.io
+  prd:
+    containerRegistry: acrentitlementazasseprd001.azurecr.io
+    dnsName: az.intra.ais
+    elasticHost: 10.145.9.36
+    elasticUser: elastic
+    elasticPassword: 
+    elasticTLS: true
+    elasticIndexPrefix: sub-entitlement-az-prd
+    swagger: true
+    httpEnabled: true
+    tlsEnabled: true
+    revisionHistoryLimit: "0"
+    permanentCandidate: false
+    clusterDomain: cluster.local
+    prefixNamespace: false
+    suffixNamespace: false
+    gatewayName: prd-gateway
+    nodeSelector:
+      agentpool: noodpool
+    kubernetesTCPAddr: entitlement-3e70cb65.hcp.southeastasia.azmk8s.io
+    kubernetesPort: tcp://entitlement-3e70cb65.hcp.southeastasia.azmk8s.io:443
+    kubernetesTCP: tcp://entitlement-3e70cb65.hcp.southeastasia.azmk8s.io:443
+    kubernetesServiceHost: entitlement-3e70cb65.hcp.southeastasia.azmk8s.io

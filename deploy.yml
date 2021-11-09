@@ -19,9 +19,6 @@ spec:
         image: acrlab1azassedev001.azurecr.io/node-express-app:0.0.1-SNAPSHOT
         ports:
         - containerPort: 3000
-        # env:
-        # - name: PORT
-        #   value: "9555"
         resources:
           requests:
             cpu: 200m
@@ -29,25 +26,6 @@ spec:
           limits:
             cpu: 300m
             memory: 300Mi
-        # livenessProbe:
-        #     httpGet:
-        #       path: /
-        #       port: http
-        # readinessProbe:
-        #     httpGet:
-        #       path: /
-        #       port: http
-
-        # readinessProbe:
-        #   initialDelaySeconds: 20
-        #   periodSeconds: 15
-        #   exec:
-        #     command: ["/bin/grpc_health_probe", "-addr=:9555"]
-        # livenessProbe:
-        #   initialDelaySeconds: 20
-        #   periodSeconds: 15
-        #   exec:
-        #     command: ["/bin/grpc_health_probe", "-addr=:9555"]
 ---
 apiVersion: v1
 kind: Service

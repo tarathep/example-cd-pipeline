@@ -56,9 +56,9 @@ spec:
               {{- toYaml . | nindent 12 }}
             {{- end }}
           volumeMounts:
-            - name: application-config
-              mountPath: "/workspace/config"
-              readOnly: true
+            # - name: application-config
+            #   mountPath: "/workspace/config"
+            #   readOnly: true
 {{- if eq $appName "apple-apns" }}
             - name: application-certificate
               mountPath: "/workspace/certificate"
@@ -107,12 +107,12 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
-        - name: application-config
-          secret:
-            secretName: {{ $appName }}-{{ .Values.deploymentEnvironment }}
-            items:
-              - key: {{ $appName }}-{{ .Values.deploymentEnvironment }}.json
-                path: config.json
+        # - name: application-config
+        #   secret:
+        #     secretName: {{ $appName }}-{{ .Values.deploymentEnvironment }}
+        #     items:
+        #       - key: {{ $appName }}-{{ .Values.deploymentEnvironment }}.json
+        #         path: config.json
 {{- if eq $appName "apple-apns" }}
         - name: application-certificate
           secret:

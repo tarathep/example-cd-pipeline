@@ -1,7 +1,7 @@
 apiVersion: install.istio.io/v1alpha1
 kind: IstioOperator
 spec:
-  hub: "acrentitlementazassedev001.azurecr.io/istio"
+  hub: "docker.io/istio"
   meshConfig:
     accessLogFile: "/dev/stdout"
     accessLogEncoding: "JSON"
@@ -13,7 +13,7 @@ spec:
           minReplicas: 1
           maxReplicas: 3
         nodeSelector:
-          agentpool: noodpool
+          agentpool: agentpool
         resources:
           requests:
             cpu: 500m
@@ -23,13 +23,13 @@ spec:
             memory: 2Gi
         env:
           - name: KUBERNETES_PORT_443_TCP_ADDR
-            value: entitlement-b4858d1d.hcp.southeastasia.azmk8s.io
+            value: aks-lab1-az-asse-dev-001-dns-70cf0abf.hcp.southeastasia.azmk8s.io
           - name: KUBERNETES_PORT
-            value: tcp://entitlement-b4858d1d.hcp.southeastasia.azmk8s.io:443
+            value: tcp://aks-lab1-az-asse-dev-001-dns-70cf0abf.hcp.southeastasia.azmk8s.io:443
           - name: KUBERNETES_PORT_443_TCP
-            value: tcp://entitlement-b4858d1d.hcp.southeastasia.azmk8s.io:443
+            value: tcp://aks-lab1-az-asse-dev-001-dns-70cf0abf.hcp.southeastasia.azmk8s.io:443
           - name: KUBERNETES_SERVICE_HOST
-            value: entitlement-b4858d1d.hcp.southeastasia.azmk8s.io
+            value: aks-lab1-az-asse-dev-001-dns-70cf0abf.hcp.southeastasia.azmk8s.io
     ingressGateways:
       - enabled: true
         name: istio-ingressgateway
@@ -39,7 +39,7 @@ spec:
             minReplicas: 1
             maxReplicas: 3
           nodeSelector:
-            agentpool: noodpool
+            agentpool: agentpool
           resources:
             requests:
               cpu: 100m
@@ -61,7 +61,7 @@ spec:
             minReplicas: 1
             maxReplicas: 3
           nodeSelector:
-            agentpool: noodpool
+            agentpool: agentpool
           resources:
             requests:
               cpu: 100m

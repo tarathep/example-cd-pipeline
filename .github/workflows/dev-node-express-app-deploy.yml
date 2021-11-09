@@ -44,13 +44,13 @@ jobs:
           cluster-name: ${{ env.CLUSTER_NAME }}
           resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
 
-      # - name: 'Build Deployment Template'
-      #   run: |
-      #     helm template ./helm/aistemplate --values helm/aistemplate/${{ env.PROJECT_NAME }}/${{ env.MICROSERVICE_NAME }}.yaml --set deploymentEnvironment=${{ env.ENVIRONMENT }} --set imageVersion=${{ env.TAG }} --set buildNumber=${{ github.run_number }} --output-dir helm/output
-      # - name: 'Deploy'
-      #   run: |
-      #     export KUBERNETES_NAMESPACE=${{ env.NAMESPACE_PREFIX }}-${{ env.ENVIRONMENT }}
-      #     kubectl apply -f helm/output/aistemplate/templates/deployment.yaml -n ${KUBERNETES_NAMESPACE}
-      #     kubectl apply -f helm/output/aistemplate/templates/service.yaml -n ${KUBERNETES_NAMESPACE}
-      #     kubectl apply -f helm/output/aistemplate/templates/destinationrule.yaml -n ${KUBERNETES_NAMESPACE}
-      #     kubectl rollout status deployment ${{ env.MICROSERVICE_NAME }} -n ${KUBERNETES_NAMESPACE}
+      - name: 'Build Deployment Template'
+        run: |
+          helm template ./helm/aistemplate --values helm/aistemplate/${{ env.PROJECT_NAME }}/${{ env.MICROSERVICE_NAME }}.yaml --set deploymentEnvironment=${{ env.ENVIRONMENT }} --set imageVersion=${{ env.TAG }} --set buildNumber=${{ github.run_number }} --output-dir helm/output
+      - name: 'Deploy'
+        run: |
+          export KUBERNETES_NAMESPACE=${{ env.NAMESPACE_PREFIX }}-${{ env.ENVIRONMENT }}
+          kubectl apply -f helm/output/aistemplate/templates/deployment.yaml -n ${KUBERNETES_NAMESPACE}
+          kubectl apply -f helm/output/aistemplate/templates/service.yaml -n ${KUBERNETES_NAMESPACE}
+          kubectl apply -f helm/output/aistemplate/templates/destinationrule.yaml -n ${KUBERNETES_NAMESPACE}
+          kubectl rollout status deployment ${{ env.MICROSERVICE_NAME }} -n ${KUBERNETES_NAMESPACE}

@@ -13,7 +13,6 @@ env:
   CLUSTER_RESOURCE_GROUP: rg-lab-github-dev-001
   NAMESPACE_PREFIX: example
   PROJECT_NAME: example
-  CONTAINER_REGISTRY_URL: acrlab1azassedev001.azurecr.io
 
 jobs:
   deploy-common:
@@ -41,32 +40,22 @@ jobs:
           cluster-name: ${{ env.CLUSTER_NAME }}
           resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
 
-      - name: Create Image ACR Secret If not exist
-        uses: azure/k8s-create-secret@v1
-        with:
-          namespace: ${{ env.NAMESPACE }}
-          container-registry-url: ${{ env.CONTAINER_REGISTRY_URL }}
-          container-registry-username: ${{ secrets.ACR_USERNAME }}
-          container-registry-password: ${{ secrets.ACR_PASSWORD }}
-          secret-name: secret-acr
-        id: create-secret
-
-      # - name: 'Build Template and Deploy'
-      #   run: |
-      #     export KUBERNETES_NAMESPACE=entitlement-${{ github.event.inputs.env }}
-      #     helm template ./helm/aistemplate --values helm/aistemplate/${{ env.PROJECT_NAME }}/_common-values.yaml --set projectName=${{ env.PROJECT_NAME }} --set istio.enabled=true --set deploymentEnvironment=${{ github.event.inputs.env }} --output-dir helm/output
-      #     kubectl apply -f helm/output/aistemplate/templates/namespace.yaml
-      #     kubectl apply -f helm/output/aistemplate/templates/virtual-service.yaml -n ${KUBERNETES_NAMESPACE}
-      #     kubectl apply -f helm/output/aistemplate/templates/gateway.yaml -n default
-      #     if [ -e ./helm/output/aistemplate/templates/externalservices.yaml ]
-      #     then
-      #         kubectl apply -f helm/output/aistemplate/templates/externalservices.yaml -n ${KUBERNETES_NAMESPACE}
-      #     else
-      #         echo "no external services"
-      #     fi
-      #     if [ -e ./helm/output/aistemplate/templates/policy.yaml ]
-      #     then
-      #         kubectl apply -f helm/output/aistemplate/templates/policy.yaml -n ${KUBERNETES_NAMESPACE}
-      #     else
-      #         echo "no policy"
-      #     fi
+      - name: 'Build Template and Deploy'
+        run: |
+          export KUBERNETES_NAMESPACE=entitlement-${{ github.event.inputs.env }}
+          helm template ./helm/aistemplate --values helm/aistemplate/${{ env.PROJECT_NAME }}/_common-values.yaml --set projectName=${{ env.PROJECT_NAME }} --set istio.enabled=true --set deploymentEnvironment=${{ github.event.inputs.env }} --output-dir helm/output
+          kubectl apply -f helm/output/aistemplate/templates/namespace.yaml
+          kubectl apply -f helm/output/aistemplate/templates/virtual-service.yaml -n ${KUBERNETES_NAMESPACE}
+          kubectl apply -f helm/output/aistemplate/templates/gateway.yaml -n default
+          if [ -e ./helm/output/aistemplate/templates/externalservices.yaml ]
+          then
+              kubectl apply -f helm/output/aistemplate/templates/externalservices.yaml -n ${KUBERNETES_NAMESPACE}
+          else
+              echo "no external services"
+          fi
+          if [ -e ./helm/output/aistemplate/templates/policy.yaml ]
+          then
+              kubectl apply -f helm/output/aistemplate/templates/policy.yaml -n ${KUBERNETES_NAMESPACE}
+          else
+              echo "no policy"
+          fi

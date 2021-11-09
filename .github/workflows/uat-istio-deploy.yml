@@ -1,0 +1,41 @@
+name: UAT - Istio Deploy
+
+on:
+  workflow_dispatch:
+
+env:
+  CLUSTER_NAME: aks-lab1-az-asse-dev-001
+  CLUSTER_RESOURCE_GROUP: rg-lab-github-dev-001
+  NAMESPACE_PREFIX: example
+  PROJECT_NAME: example
+
+jobs:
+  deploy-common:
+    name: Deploy Common
+    # runs-on: [self-hosted, entitlement-dev]
+    runs-on: ubuntu-latest
+    environment: uat
+    steps:
+      - name: Checkout pipelines
+        uses: actions/checkout@v2
+
+      - name: List working directory
+        run: ls
+
+      - name: Login via Azure CLI
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_RBAC_CREDENTIALS }}
+          allow-no-subscriptions: true
+
+      - name: Set Kubernetes Context
+        uses: azure/aks-set-context@v1
+        with:
+          creds: '${{ secrets.AZURE_RBAC_CREDENTIALS }}'
+          cluster-name: ${{ env.CLUSTER_NAME }}
+          resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
+
+      - name: 'Build Template and Deploy'
+        run: |
+          kubectl apply -f istio/istio-ns.yaml
+          kubectl apply -f istio/istio-uat.yaml

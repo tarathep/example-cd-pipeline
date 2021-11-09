@@ -1,11 +1,11 @@
-projectDomainName: entitlement
+projectDomainName: example
 
 virutalService:
   - prefix:
-      - "/books/"
+      - "/node/"
     rewrite: "/"
     port: 3000
-    host: apple-apns
+    host: node-express-app
 
 externalServices:
   dev:
