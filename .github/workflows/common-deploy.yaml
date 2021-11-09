@@ -42,7 +42,7 @@ jobs:
 
       - name: 'Build Template and Deploy'
         run: |
-          export KUBERNETES_NAMESPACE=entitlement-${{ github.event.inputs.env }}
+          export KUBERNETES_NAMESPACE=${{ env.PROJECT_NAME }}-${{ github.event.inputs.env }}
           helm template ./helm/aistemplate --values helm/aistemplate/${{ env.PROJECT_NAME }}/_common-values.yaml --set projectName=${{ env.PROJECT_NAME }} --set istio.enabled=true --set deploymentEnvironment=${{ github.event.inputs.env }} --output-dir helm/output
           kubectl apply -f helm/output/aistemplate/templates/namespace.yaml
           kubectl apply -f helm/output/aistemplate/templates/virtual-service.yaml -n ${KUBERNETES_NAMESPACE}
