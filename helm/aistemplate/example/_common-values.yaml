@@ -2,7 +2,7 @@ projectDomainName: example
 
 virutalService:
   - prefix:
-      - "/node/"
+      - "/nodex/"
     rewrite: "/"
     port: 3000
     host: node-express-app
