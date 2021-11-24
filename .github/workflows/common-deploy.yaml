@@ -17,8 +17,8 @@ env:
 jobs:
   deploy-common:
     name: Deploy Common
-    runs-on: ubuntu-latest
-    # runs-on: [self-hosted, entitlement-dev]
+    # runs-on: ubuntu-latest
+    runs-on: [self-hosted, example-dev]
     environment: ${{ github.event.inputs.env }}
     steps:
       - name: Checkout pipelines
