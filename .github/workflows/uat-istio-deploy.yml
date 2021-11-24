@@ -12,8 +12,7 @@ env:
 jobs:
   deploy-common:
     name: Deploy Common
-    # runs-on: [self-hosted, entitlement-dev]
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, example-dev]
     environment: uat
     steps:
       - name: Checkout pipelines

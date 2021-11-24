@@ -20,8 +20,7 @@ env:
 jobs:
   deploy-microservice:
     name: Deploy Microservice
-    # runs-on: [self-hosted, entitlement-dev]
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, example-dev]
     environment: dev
     steps:
       - name: Checkout pipelines
